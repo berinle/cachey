@@ -11,6 +11,9 @@ spring:
           max-active: 8
           max-idle: 8
           min-idle: 0
+          test-on-borrow: true
+          test-while-idle: true
+      timeout: 2000ms
 
 management:
   endpoints:

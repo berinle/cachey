@@ -35,8 +35,10 @@ A minimal Spring Boot 3.0.13 application with Redis integration, designed for Cl
 3. Test the application:
    ```bash
    curl http://localhost:8080/api/cache/ping
-   curl http://localhost:8080/actuator/health
+   curl http://localhost:8080/api/cache/health
    ```
+
+**Note**: The application automatically detects local development and disables SSL for Redis connections. Cloud Foundry deployments use SSL when TLS ports are available in service credentials.
 
 ## API Endpoints
 

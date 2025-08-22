@@ -30,14 +30,16 @@ public class RedisConfig {
                 // Check if this is a Redis Sentinel (HA) setup
                 if (isRedisSentinelService(redisService)) {
                     RedisSentinelConfiguration sentinelConfig = configureSentinel(redisService);
-                    JedisClientConfiguration clientConfig = createJedisClientConfiguration();
+                    boolean useSsl = hasTlsPort(redisService);
+                    JedisClientConfiguration clientConfig = createJedisClientConfiguration(useSsl);
                     JedisConnectionFactory factory = new JedisConnectionFactory(sentinelConfig, clientConfig);
                     factory.afterPropertiesSet();
                     return factory;
                 } else {
                     // Fallback to standalone configuration
                     RedisStandaloneConfiguration standaloneConfig = configureStandalone(redisService);
-                    JedisClientConfiguration clientConfig = createJedisClientConfiguration();
+                    boolean useSsl = hasTlsPort(redisService);
+                    JedisClientConfiguration clientConfig = createJedisClientConfiguration(useSsl);
                     JedisConnectionFactory factory = new JedisConnectionFactory(standaloneConfig, clientConfig);
                     factory.afterPropertiesSet();
                     return factory;
@@ -45,30 +47,42 @@ public class RedisConfig {
             }
         }
         
-        // Local development - standalone Redis
+        // Local development - standalone Redis (no SSL)
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName("localhost");
         config.setPort(6379);
         
-        JedisClientConfiguration clientConfig = createJedisClientConfiguration();
+        JedisClientConfiguration clientConfig = createJedisClientConfiguration(false);
         JedisConnectionFactory factory = new JedisConnectionFactory(config, clientConfig);
         factory.afterPropertiesSet();
         return factory;
     }
     
-    private JedisClientConfiguration createJedisClientConfiguration() {
-        return JedisClientConfiguration.builder()
-                .usePooling()
-                .poolConfig(jedisPoolConfig())
-                .and()
-                .useSsl()
-                .build();
+    private JedisClientConfiguration createJedisClientConfiguration(boolean useSsl) {
+        if (useSsl) {
+            return JedisClientConfiguration.builder()
+                    .usePooling()
+                    .poolConfig(jedisPoolConfig())
+                    .and()
+                    .useSsl()
+                    .build();
+        } else {
+            return JedisClientConfiguration.builder()
+                    .usePooling()
+                    .poolConfig(jedisPoolConfig())
+                    .build();
+        }
     }
     
     private boolean isRedisSentinelService(CfService redisService) {
         // Check if service has sentinel-specific credentials
         return redisService.getCredentials().getMap().containsKey("sentinels") ||
                redisService.getCredentials().getMap().containsKey("master_name");
+    }
+    
+    private boolean hasTlsPort(CfService redisService) {
+        // Check if service has TLS port configured
+        return redisService.getCredentials().getMap().containsKey("tls_port");
     }
     
     private RedisSentinelConfiguration configureSentinel(CfService redisService) {
