@@ -1,0 +1,15 @@
+---
+applications:
+- name: cachey
+  memory: 1G
+  instances: 1
+  path: target/cachey-0.0.1-SNAPSHOT.jar
+  buildpacks:
+    - java_buildpack_offline
+  env:
+    JAVA_OPTS: "-Djava.security.egd=file:///dev/urandom"
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+  services:
+    - ha-redis
+  # routes:
+  #   - route: cachey.apps.internal
